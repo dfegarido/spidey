@@ -3,62 +3,69 @@
 from os import name
 from bs4 import BeautifulSoup
 import requests
+import urllib3.contrib.pyopenssl
+import certifi
+import urllib3
+
+#For SSL Certificate
+urllib3.contrib.pyopenssl.inject_into_urllib3()
+http = urllib3.PoolManager(cert_reqs="CERT_REQUIRED",ca_certs=certifi.where())
 
 #url = raw_input("Url : ")
-url = "azal.com/main.html"
+search = str(raw_input("What do you want to search in Google : "))
 
-def crawl(url):
-    
-    r = requests.get("http://"+url)
-    data = r.text
-    
-
-    if(name == "nt"):
-        soup = BeautifulSoup(data, "html.parser")
-        li_parser = link(soup)
-        #print(li_parser)
-        get_item_link(li_parser)
-        
-    else:
-        soup = BeautifulSoup(data, "lxml")
-        link(soup)
-        
-        
-
- 
-
-def link(soup):
-    page = 0
-    y = []
-    for l in soup.find_all("a"):
-        li = l.get("href")
-        #fp = open(url+".txt","a")
-        #fp.write(li+"\n")
-        #fp.close()
-        y.append(li)
-        #print(y)
-        page += 1
-    return y
-    
-    
-
-   
-            
-
-def get_item_link(x):
-    page = 0
+def crawl(search):
     try:
-        for i in x:
-            r = requests.get(i)
-            data = r.text
-            soup = BeautifulSoup(data, "html.parser")
-            print(soup)
+        page = 0
+        while True :
+            r = http.request("GET","https://www.google.com/search?q={}&start={}0&*".format(search,page))
+            data = r.data
+            
+            if(name == "nt"):
+                soup = BeautifulSoup(data, "html5lib")
+                #print(soup)
+                link(soup)
+            else:
+                soup = BeautifulSoup(data, "lxml")
+                #print(soup)
+                link(soup)
+            print("For page : {}".format(page))
             page += 1
+            
+           
     except KeyboardInterrupt:
-        print("Exit !!!")
+        print("Exit!!!")
+    
         
 
+        
+def link(soup):
+   
+    try:
+        
+        for l in soup.find_all("h3",{"class":"r"}):
+            for x in l.findAll("a"):
+                y = x.get("href")
+                print(y)
+                link_to_crawl = http.request("GET","https://www.google.com{}".format(y))
+                print(link_to_crawl.status)
+                #data = link_to_crawl.data
+                #soup = BeautifulSoup(data, "html5lib")
+                #for x in soup.findAll("a"):
+                   # y = x.get("href")
+                    #print(y)
+           
+           
+            
+    except KeyboardInterrupt:
+        print("Exit!!!")
+        
+    
+    
+  
 
-if __name__=="__main__":   
-    crawl(url)
-    #get_item_link()
+if __name__=="__main__":
+    
+    
+    crawl(search)
+    
